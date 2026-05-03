@@ -1,0 +1,23 @@
+{
+    "name": "com.spacetime.pvswrap.runtime",
+    "rootNamespace": "",
+    "references": [
+        "com.spacetime.core.runtime",
+        "com.spacetime.pvs.runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.lingren.scenemerge",
+            "expression": "",
+            "define": "LR_SCENE_MERGE_ENABLED"
+        }
+    ],
+    "noEngineReferences": false
+}

@@ -1,10 +1,14 @@
 {
   "name": "com.spacetime.pvswrap",
+  "displayName": "ST PVS Wrap",
   "version": "1.0.0",
-  "displayName": "SpaceTime PVSWrap",
-  "description": "SpaceTime PVSWrap",
-  "keywords": [
-    "pvswrap"
-  ],
-  "unity": "2022.3"
+  "unity": "2022.3",
+  "description": "SpaceTime PVS Wrap package - higher-level PVS wrapper with volume management, camera sampling, octree, and scene utilities",
+  "keywords": ["pvs", "culling", "visibility", "wrap"],
+  "author": "SpaceTime",
+  "license": "MIT",
+  "dependencies": {
+    "com.spacetime.core": "1.0.0",
+    "com.spacetime.pvs": "1.0.0"
+  }
 }
