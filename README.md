@@ -1,5 +1,14 @@
 # com.spacetime.pvswrap
 
+> **与 [com.spacetime.pvs](../com.spacetime.pvs/README.md) 的关系**
+>
+> | 包 | 职责定位 |
+> |----|----------|
+> | [`com.spacetime.pvs`](../com.spacetime.pvs/README.md) | **核心烘培**：采样系统、GPU 渲染、可见性计算算法 |
+> | `com.spacetime.pvswrap`（本包） | **上层封装**：数据收集、数据存储、烘培调用、运行时剔除 |
+>
+> `com.spacetime.pvswrap` 依赖 `com.spacetime.pvs`，负责将场景数据准备好后交给核心层烘培，并在运行时消费烘培结果。
+
 SpaceTime PVS 上层封装包，负责**数据收集、数据存储与烘培调用**，构建于 `com.spacetime.pvs`（核心烘培）之上，提供面向具体场景的完整工作流。
 
 ---
