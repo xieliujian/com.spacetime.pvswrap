@@ -1,0 +1,10 @@
+{
+  "name": "com.spacetime.pvswrap",
+  "version": "1.0.0",
+  "displayName": "SpaceTime PVSWrap",
+  "description": "SpaceTime PVSWrap",
+  "keywords": [
+    "pvswrap"
+  ],
+  "unity": "2022.3"
+}
