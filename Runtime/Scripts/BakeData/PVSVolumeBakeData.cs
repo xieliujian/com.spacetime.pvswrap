@@ -48,12 +48,6 @@ namespace ST.PVS
         public byte[] rawDataIdxArray;
 
         /// <summary>
-        /// Runtime使用Compressed
-        /// </summary>
-		public VisibilityIndex[] visibilityIndex2;
-		public ChunkIndex[] selectChunkIndex2;
-
-        /// <summary>
         /// 
         /// </summary>
         public List<PVSCellInfo> cellInfoList = new List<PVSCellInfo>();
@@ -85,28 +79,19 @@ namespace ST.PVS
             cellSize = volume.bakeCellSize;
             cellCount = GridMath.CalculateCellCount(volumeSize, cellSize);
 
-            if (bakeDataVersion >= (int)PVSBakeDataVer.Ver4)
-            {
-                var sceneOctree = PVSSceneOctree.S;
-                octreeAreaExist = sceneOctree.SplitAll(volume, volume.commonBakeData, volumePos, volumeRot, volumeSize, cellSize, false);
-                sceneOctree.SplitAllForceArea(volumePos, volumeRot, volumeSize, cellSize);
-                sceneOctree.CacheNodeInfo();
+            var sceneOctree = PVSSceneOctree.S;
+            octreeAreaExist = sceneOctree.SplitAll(volume, volume.commonBakeData, volumePos, volumeRot, volumeSize, cellSize, false);
+            sceneOctree.SplitAllForceArea(volumePos, volumeRot, volumeSize, cellSize);
+            sceneOctree.CacheNodeInfo();
 
-                cellCount = sceneOctree.cellNumVec;
-                cellSize = sceneOctree.cellSize;
+            cellCount = sceneOctree.cellNumVec;
+            cellSize = sceneOctree.cellSize;
 
-                var nodePosInfoList = sceneOctree.nodePosInfoList;
+            var nodePosInfoList = sceneOctree.nodePosInfoList;
 
-                rawData = new RawData[nodePosInfoList.Count];
-                allSamplePosInfoList = new List<PVSWorldPosInfo>();
-                allSamplePosInfoList.AddRange(nodePosInfoList);
-            }
-            else
-            {
-                allSamplePosInfoList = volume.GetSamplingPosInfoList(Space.World, true, 
-                    volumePos, volumeRot, volumeSize, cellCount, cellSize);
-                rawData = new RawData[allSamplePosInfoList.Count];
-            }
+            rawData = new RawData[nodePosInfoList.Count];
+            allSamplePosInfoList = new List<PVSWorldPosInfo>();
+            allSamplePosInfoList.AddRange(nodePosInfoList);
 
             cellInfoList.Clear();
         }
@@ -181,23 +166,7 @@ namespace ST.PVS
 	        if (rawData == null || rawData.Length <= 0)
 		        return;
 
-			if (bakeDataVersion == (int)PVSBakeDataVer.Ver3)
-            {
-                CompalteStreamVer3();
-            }
-            else if (bakeDataVersion == (int)PVSBakeDataVer.Ver4)
-            {
-                CompleteStreamVer4();
-            }
-            else if (bakeDataVersion == (int)PVSBakeDataVer.Ver5)
-            {
-                CompleteStreamVer5();
-            }
-            else if (bakeDataVersion == (int)PVSBakeDataVer.Ver6 ||
-               bakeDataVersion == (int)PVSBakeDataVer.Ver7)
-            {
-                CompleteStreamVer6();
-            }
+            CompleteStreamVer6();
         }
 
         /// <summary>
@@ -217,23 +186,7 @@ namespace ST.PVS
             _samplePosOffsetMask = 0;
             _samplePos = Vector3.zero;
 
-            if (bakeDataVersion == (int)PVSBakeDataVer.Ver3)
-            {
-				SampleAtIndexByVer3(index, indices, out _samplePos);
-            }
-            else if (bakeDataVersion == (int)PVSBakeDataVer.Ver4)
-            {
-                SampleAtIndexByVer4(index, indices, pos, _isSampleData, out _samplePos, out _leafNodeIdx);
-            }
-            else if (bakeDataVersion == (int)PVSBakeDataVer.Ver5)
-            {
-                SampleAtIndexByVer5(index, indices, pos, _isSampleData, out _samplePos, out _leafNodeIdx, out _samplePosOffsetMask);
-            }
-            else if (bakeDataVersion == (int)PVSBakeDataVer.Ver6 ||
-                bakeDataVersion == (int)PVSBakeDataVer.Ver7)
-            {
-                SampleAtIndexByVer6(index, indices, pos, _isSampleData, out _samplePos, out _leafNodeIdx, out _samplePosOffsetMask);
-            }
+            SampleAtIndexByVer6(index, indices, pos, _isSampleData, out _samplePos, out _leafNodeIdx, out _samplePosOffsetMask);
         }
 
         /// <summary>
@@ -258,33 +211,7 @@ namespace ST.PVS
         /// <returns></returns>
         public bool IsValid()
         {
-            var isValid = false;
-
-            if (bakeDataVersion == (int)PVSBakeDataVer.Ver3)
-            {
-                isValid = (visibilityIndex2 != null) && (visibilityIndex2.Length > 0);
-            }
-            else if (bakeDataVersion >= (int)PVSBakeDataVer.Ver4)
-            {
-                isValid = (rawDataIdxArray != null) && (rawDataIdxArray.Length > 0);
-            }
-
-            return isValid;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void CompleteStreamVer4()
-        {
-            if (octreeAreaExist)
-            {
-                CompleteStreamVer4_Octree();
-            }
-            else
-            {
-                CompalteStreamVer4_UnOctree();
-            }
+            return (rawDataIdxArray != null) && (rawDataIdxArray.Length > 0);
         }
 
         /// <summary>
@@ -305,41 +232,6 @@ namespace ST.PVS
         /// <summary>
         /// 
         /// </summary>
-        void CompleteStreamVer5()
-        {
-            if (octreeAreaExist)
-            {
-                CompleteStreamVer5_Octree();
-            }
-            else
-            {
-                CompalteStreamVer5_UnOctree();
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void CompalteStreamVer3()
-        {
-            var data2 = new VisibilitySet2[rawData.Length];
-            uint[] visibilityIndex = new uint[rawData.Length];
-            ushort[] selectChunkIndex = new ushort[rawData.Length];
-            Dictionary<int, List<VisibilitySet2>> chunkSet2 = new Dictionary<int, List<VisibilitySet2>>();
-
-            PVSBakeDataUtils.CompleteStream_Compress(rawData, visibilityIndex, null, selectChunkIndex, data2);
-            PVSBakeDataUtils.CompleteStream_FillChunk(chunkSet2, visibilityIndex, selectChunkIndex, data2,
-                allSamplePosInfoList);
-            PVSBakeDataUtils.CompleteStream_SplatIndex(visibilityIndex, selectChunkIndex, 
-                out visibilityIndex2, out _, out selectChunkIndex2);
-            PVSBakeDataUtils.CreateBin(chunkSet2, exBinData, exLoadFileLength);
-
-            rawDataIdxArray = null;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         void CompalteStreamVer6_UnOctree()
         {
             var chunkMgr = PVSCompressRawDataChunkMgr.S;
@@ -353,49 +245,6 @@ namespace ST.PVS
             rawDataIdxArray = PVSBakeDataUtils.SerializeWrite(saveBigVisIndex,
                 saveChunkIdxArray, saveIdxArray);
             PVSCompressRawDataUtils.SaveBinData(chunkMgr, exBinData, exLoadFileLength, cellInfoList, volumePos, true);
-
-            visibilityIndex2 = null;
-            selectChunkIndex2 = null;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void CompalteStreamVer5_UnOctree()
-        {
-            var chunkMgr = PVSCompressRawDataChunkMgr.S;
-            var idxArray = new uint[rawData.Length];
-            var saveChunkIdxArray = new ushort[rawData.Length];
-            var saveIdxArray = new uint[rawData.Length];
-
-            chunkMgr.Init(rawData, allSamplePosInfoList, volumeSize);
-            chunkMgr.FillIndexArray(idxArray, saveChunkIdxArray, saveIdxArray);
-
-            rawDataIdxArray = PVSBakeDataUtils.SerializeWrite(false, saveChunkIdxArray, saveIdxArray);
-            PVSCompressRawDataUtils.SaveBinData(chunkMgr, exBinData, exLoadFileLength, cellInfoList, volumePos, true);
-
-            visibilityIndex2 = null;
-            selectChunkIndex2 = null;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void CompalteStreamVer4_UnOctree()
-        {
-            var chunkMgr = PVSCompressRawDataChunkMgr.S;
-            var idxArray = new uint[rawData.Length];
-            var saveChunkIdxArray = new ushort[rawData.Length];
-            var saveIdxArray = new uint[rawData.Length];
-
-            chunkMgr.Init(rawData, allSamplePosInfoList, volumeSize);
-            chunkMgr.FillIndexArray(idxArray, saveChunkIdxArray, saveIdxArray);
-
-            rawDataIdxArray = PVSBakeDataUtils.SerializeWrite(false, saveChunkIdxArray, saveIdxArray);
-            PVSCompressRawDataUtils.SaveBinData(chunkMgr, exBinData, exLoadFileLength, cellInfoList, volumePos, false);
-
-            visibilityIndex2 = null;
-            selectChunkIndex2 = null;
         }
 
         /// <summary>
@@ -415,86 +264,6 @@ namespace ST.PVS
             sceneOctree.ProcessNodeInfo(idxArray, saveChunkIdxArray, saveIdxArray);
             rawDataIdxArray = sceneOctree.SerializeWrite(saveBigVisIndex);
             PVSCompressRawDataUtils.SaveBinData(chunkMgr, exBinData, exLoadFileLength, cellInfoList, volumePos, true);
-
-            visibilityIndex2 = null;
-            selectChunkIndex2 = null;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void CompleteStreamVer5_Octree()
-        {
-            var chunkMgr = PVSCompressRawDataChunkMgr.S;
-            var sceneOctree = PVSSceneOctree.S;
-            var samplePosList = sceneOctree.nodePosInfoList;
-            var idxArray = new uint[rawData.Length];
-            var saveIdxArray = new uint[rawData.Length];
-            var saveChunkIdxArray = new ushort[rawData.Length];
-
-            chunkMgr.Init(rawData, samplePosList, volumeSize);
-            chunkMgr.FillIndexArray(idxArray, saveChunkIdxArray, saveIdxArray);
-            sceneOctree.ProcessNodeInfo(idxArray, saveChunkIdxArray, saveIdxArray);
-            rawDataIdxArray = sceneOctree.SerializeWrite(false);
-            PVSCompressRawDataUtils.SaveBinData(chunkMgr, exBinData, exLoadFileLength, cellInfoList, volumePos, true);
-
-            visibilityIndex2 = null;
-            selectChunkIndex2 = null;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void CompleteStreamVer4_Octree()
-        {
-            var chunkMgr = PVSCompressRawDataChunkMgr.S;
-            var sceneOctree = PVSSceneOctree.S;
-            var samplePosList = sceneOctree.nodePosInfoList;
-            var idxArray = new uint[rawData.Length];
-            var saveIdxArray = new uint[rawData.Length];
-            var saveChunkIdxArray = new ushort[rawData.Length];
-
-            chunkMgr.Init(rawData, samplePosList, volumeSize);
-            chunkMgr.FillIndexArray(idxArray, saveChunkIdxArray, saveIdxArray);
-            sceneOctree.ProcessNodeInfo(idxArray, saveChunkIdxArray, saveIdxArray);
-            rawDataIdxArray = sceneOctree.SerializeWrite(false);
-            PVSCompressRawDataUtils.SaveBinData(chunkMgr, exBinData, exLoadFileLength, cellInfoList, volumePos, false);
-
-            visibilityIndex2 = null;
-            selectChunkIndex2 = null;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="_rapidListIndices"></param>
-        void SampleAtIndexByVer3(int index, RapidList<ushort> _rapidListIndices, out Vector3 _samplePos)
-        {
-            _samplePos = GetSamplePosUnOctree(index);
-
-            int nRealIndex = index;
-            int selectChunk = -1;
-            if (visibilityIndex2 != null)
-            {
-                int nIdx = index / PVSDefine.s_BakeDataSplatSize;
-                int nOffset = index % PVSDefine.s_BakeDataSplatSize;
-                if (nIdx >= visibilityIndex2.Length)
-                    return;
-
-                VisibilityIndex indexset = visibilityIndex2[nIdx];
-                ChunkIndex chunkselect = selectChunkIndex2[nIdx];
-                if (indexset.data.Length == 0)
-                    return;
-
-                selectChunk = chunkselect.data[nOffset];
-                nRealIndex = indexset.data[nOffset];
-            }
-
-            if (nRealIndex == ushort.MaxValue)
-                return;
-
-            SampleAtIndexByVer3(selectChunk, nRealIndex, _rapidListIndices);
         }
 
         /// <summary>
@@ -503,7 +272,7 @@ namespace ST.PVS
         /// <param name="index"></param>
         /// <param name="indices"></param>
         /// <param name="vPos"></param>
-        /// <param name="isSampleData"></param>
+        /// <param name="_isSampleData"></param>
         /// <param name="_samplePos"></param>
         /// <param name="_leafNodeIdx"></param>
         /// <param name="_samplePosOffsetMask"></param>
@@ -523,61 +292,6 @@ namespace ST.PVS
             else
             {
                 SampleAtIndexByVer6_UnOctree(index, indices, _isSampleData, out _samplePos, out _samplePosOffsetMask);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="indices"></param>
-        /// <param name="vPos"></param>
-        /// <param name="_isSampleData"></param>
-        /// <param name="_samplePos"></param>
-        /// <param name="_leafNodeIdx"></param>
-        /// <param name="_samplePosOffsetMask"></param>
-        void SampleAtIndexByVer5(int index, RapidList<ushort> indices, Vector3 vPos,
-            bool _isSampleData,
-            out Vector3 _samplePos,
-            out int _leafNodeIdx, out uint _samplePosOffsetMask)
-        {
-            _leafNodeIdx = 0;
-            _samplePosOffsetMask = 0;
-            _samplePos = Vector3.zero;
-
-            if (octreeAreaExist)
-            {
-                SampleAtIndexByVer5_Octree(vPos, indices, _isSampleData, out _samplePos, out _leafNodeIdx, out _samplePosOffsetMask);
-            }
-            else
-            {
-                SampleAtIndexByVer5_UnOctree(index, indices, _isSampleData, out _samplePos, out _samplePosOffsetMask);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="indices"></param>
-        /// <param name="vPos"></param>
-        /// <param name="_isSampleData"></param>
-        /// <param name="_samplePos"></param>
-        /// <param name="_leafNodeIdx"></param>
-        void SampleAtIndexByVer4(int index, RapidList<ushort> indices, Vector3 vPos,
-            bool _isSampleData,
-            out Vector3 _samplePos, out int _leafNodeIdx)
-        {
-            _leafNodeIdx = 0;
-            _samplePos = Vector3.zero;
-
-            if (octreeAreaExist)
-            {
-                SampleAtIndexByVer4_Octree(vPos, indices, _isSampleData, out _samplePos, out _leafNodeIdx);
-            }
-            else
-            {
-                SampleAtIndexByVer4_UnOctree(index, indices, _isSampleData, out _samplePos);
             }
         }
 
@@ -605,54 +319,6 @@ namespace ST.PVS
 
             var realRawIdx = saveBigVisIndex ? _outRawUintIdx : _outRawIdx;
             SampleAtIndexByVer5(_outChunkIdx, (int)realRawIdx, _rapidListIndices, _isSampleData, out _samplePosOffsetMask);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="_rapidListIndices"></param>
-        /// <param name="_samplePos"></param>
-        /// <param name="_samplePosOffsetMask"></param>
-        void SampleAtIndexByVer5_UnOctree(int index, RapidList<ushort> _rapidListIndices,
-            bool _isSampleData,
-            out Vector3 _samplePos, out uint _samplePosOffsetMask)
-        {
-            _samplePosOffsetMask = 0;
-            _samplePos = GetSamplePosUnOctree(index);
-
-            if (rawDataIdxArray == null || rawDataIdxArray.Length <= 0)
-                return;
-
-            PVSBakeDataUtils.DeserializeRead(false, rawDataIdxArray, index, out byte _outChunkIdx, 
-                out ushort _outRawIdx, out _);
-            if (_outChunkIdx == byte.MaxValue)
-                return;
-
-            SampleAtIndexByVer5(_outChunkIdx, _outRawIdx, _rapidListIndices, _isSampleData, out _samplePosOffsetMask);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="_rapidListIndices"></param>
-        /// <param name="_isSampleData"></param>
-        /// <param name="_samplePos"></param>
-        void SampleAtIndexByVer4_UnOctree(int index, RapidList<ushort> _rapidListIndices, 
-            bool _isSampleData,
-            out Vector3 _samplePos)
-        {
-            _samplePos = GetSamplePosUnOctree(index);
-
-            if (rawDataIdxArray == null || rawDataIdxArray.Length <= 0)
-                return;
-
-            PVSBakeDataUtils.DeserializeRead(false, rawDataIdxArray, index, out byte _outChunkIdx, out ushort _outRawIdx, out _);
-            if (_outChunkIdx == byte.MaxValue)
-                return;
-
-            SampleAtIndexByVer4(_outChunkIdx, _outRawIdx, _rapidListIndices, _isSampleData);
         }
 
         /// <summary>
@@ -690,82 +356,6 @@ namespace ST.PVS
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="pos"></param>
-        /// <param name="_rapidListIndices"></param>
-        /// <param name="_leafNodeIdx"></param>
-        /// <param name="_samplePosOffsetMask"></param>
-        void SampleAtIndexByVer5_Octree(Vector3 pos, RapidList<ushort> _rapidListIndices, 
-            bool _isSampleData,
-            out Vector3 _samplePos, out int _leafNodeIdx, out uint _samplePosOffsetMask)
-        {
-            _leafNodeIdx = 0;
-            _samplePosOffsetMask = 0;
-            _samplePos = Vector3.zero;
-
-            if (rawDataIdxArray == null || rawDataIdxArray.Length <= 0)
-                return;
-
-            int leafNodeIdx = 0;
-            PVSOctreeUtils.DeserializeRead(false, rawDataIdxArray, pos, volumePos,
-                volumeRot, volumeSize, cellCount, cellSize, out byte _outChunkIdx, out ushort _outRawIdx, out _, out _samplePos, ref leafNodeIdx);
-            _leafNodeIdx = leafNodeIdx;
-
-            if (_outChunkIdx == byte.MaxValue)
-                return;
-
-            SampleAtIndexByVer5(_outChunkIdx, _outRawIdx, _rapidListIndices, _isSampleData, out _samplePosOffsetMask);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pos"></param>
-        /// <param name="_rapidListIndices"></param>
-        /// <param name="_samplePos"></param>
-        /// <param name="_leafNodeIdx"></param>
-        void SampleAtIndexByVer4_Octree(Vector3 pos, RapidList<ushort> _rapidListIndices,
-            bool _isSampleData,
-            out Vector3 _samplePos, out int _leafNodeIdx)
-        {
-            _leafNodeIdx = 0;
-            _samplePos = Vector3.zero;
-
-            if (rawDataIdxArray == null || rawDataIdxArray.Length <= 0)
-                return;
-
-            int leafNodeIdx = 0;
-            PVSOctreeUtils.DeserializeRead(false, rawDataIdxArray, pos, volumePos,
-                volumeRot, volumeSize, cellCount, cellSize, out byte _outChunkIdx,
-                out ushort _outRawIdx, out _, out _samplePos, ref leafNodeIdx);
-            _leafNodeIdx = leafNodeIdx;
-
-            if (_outChunkIdx == byte.MaxValue)
-                return;
-
-            SampleAtIndexByVer4(_outChunkIdx, _outRawIdx, _rapidListIndices, _isSampleData);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="selectChunk"></param>
-        /// <param name="nRealIndex"></param>
-        /// <param name="_rapidListIndices"></param>
-        void SampleAtIndexByVer3(int selectChunk, int nRealIndex, RapidList<ushort> _rapidListIndices)
-        {
-            if (exBinData.ContainsKey(selectChunk))
-            {
-                PVSBakeDataSerialize streamData = exBinData[selectChunk];
-                if (_rapidListIndices != null)
-                {
-                    streamData.DeserializeRead_ByVer3(nRealIndex, _rapidListIndices);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="_selectChunk"></param>
         /// <param name="_realIndex"></param>
         /// <param name="_rapidListIndices"></param>
@@ -782,25 +372,6 @@ namespace ST.PVS
                 if (_rapidListIndices != null)
                 {
                     streamData.DeserializeRead_ByVer4(_realIndex, _rapidListIndices, true, _isSampleData, out samplePosOffsetMask);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="selectChunk"></param>
-        /// <param name="nRealIndex"></param>
-        /// <param name="_rapidListIndices"></param>
-        /// <param name="_isSampleData"></param>
-        void SampleAtIndexByVer4(int selectChunk, int nRealIndex, RapidList<ushort> _rapidListIndices, bool _isSampleData)
-        {
-            if (exBinData.ContainsKey(selectChunk))
-            {
-                PVSBakeDataSerialize streamData = exBinData[selectChunk];
-                if (_rapidListIndices != null)
-                {
-                    streamData.DeserializeRead_ByVer4(nRealIndex, _rapidListIndices, false, _isSampleData, out _);
                 }
             }
         }
