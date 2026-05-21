@@ -121,7 +121,7 @@ namespace ST.PVS
         public static void CalcCullingVolumeAllBakeData()
         {
             string strPath = PVSBakeDataUtils.GetActiveScenePath();
-            string dir = string.Format("{0}Occlusion/", strPath);
+            string dir = string.Format("{0}/occlusion/", strPath);
 
             var cullingVolume = GameObject.FindObjectOfType<ST.PVS.PVSVolume>();
             if (cullingVolume == null || cullingVolume.BakeData == null)
@@ -133,7 +133,7 @@ namespace ST.PVS
 
             for (int i = 0; i < 64; i++)
             {
-                string dataAsset = string.Format("{0}Occlusion_{1}.bytes", dir, i);
+                string dataAsset = string.Format("{0}occlusion_{1}.bytes", dir, i);
                 string assetRootPath = System.IO.Path.GetFullPath(Application.dataPath);
                 string absFilePath = assetRootPath.Substring(0, assetRootPath.Length - 6) + dataAsset;
 
