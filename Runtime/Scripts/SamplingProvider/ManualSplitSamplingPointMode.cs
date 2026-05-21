@@ -35,7 +35,7 @@ namespace ST.PVS
             return true;
 
 #else
-            return false;
+            return true;
 #endif
         }
 

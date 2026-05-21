@@ -34,8 +34,8 @@ namespace ST.PVS
                 return false;
 
             return true;
-#else      
-            return false;
+#else
+            return true;
 #endif
 
         }
