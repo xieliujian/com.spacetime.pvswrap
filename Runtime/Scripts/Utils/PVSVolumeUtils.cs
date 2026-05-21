@@ -19,15 +19,7 @@ namespace ST.PVS
         /// <returns></returns>
         public static PVSVolume GetCullingVolume()
         {
-            PVSVolume cullingVolumeCmp = null;
-
-            GameObject cullingVolume = GameObject.Find("Global/CullingVolume");
-            if (cullingVolume != null)
-            {
-                cullingVolumeCmp = cullingVolume.GetComponent<PVSVolume>();
-            }
-
-            return cullingVolumeCmp;
+            return GameObject.FindObjectOfType<PVSVolume>();
         }
 
         /// <summary>
