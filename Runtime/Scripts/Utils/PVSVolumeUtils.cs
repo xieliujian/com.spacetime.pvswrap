@@ -245,7 +245,8 @@ namespace ST.PVS
             ProcessTerrain();
             SetAllDistanceLODScriptEnable(false);
 
-            Dictionary<int, List<GameObject>> dict = PVSWrapBridge.onSceneToolsGetAllPrefabs();
+            Dictionary<int, List<GameObject>> dict = PVSWrapBridge.onSceneToolsGetAllPrefabs?.Invoke()
+                ?? new Dictionary<int, List<GameObject>>();
             HashSet<List<Renderer>> selectedRenderers = new HashSet<List<Renderer>>();
 
             CollAllObjs_AddTerrainPrefabList(dict);
@@ -708,8 +709,8 @@ namespace ST.PVS
         /// </summary>
         static void ProcessTerrain()
         {
-            PVSWrapBridge.onGenerateSectorObjectPositionInfo();
-            PVSWrapBridge.onLoadRuntimeTerrainForPVS();
+            PVSWrapBridge.onGenerateSectorObjectPositionInfo?.Invoke();
+            PVSWrapBridge.onLoadRuntimeTerrainForPVS?.Invoke();
 
             GameObject obj = GameObject.Find(PVSDefine.TERRAIN_MESH_PVSROOT_NONE_NAME);
             if (obj == null)

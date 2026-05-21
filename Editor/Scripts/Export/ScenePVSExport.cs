@@ -109,7 +109,7 @@ namespace ST.PVS
                 return false;
             }
 
-            PVSWrapBridge.onResToolsEnableSet(false);
+            PVSWrapBridge.onResToolsEnableSet?.Invoke(false);
 
             var binDir = PVSBakeDataUtils.CreateBinFolder(false);
             PVSBakeDataUtils.DeleteAssetsInFolder(binDir);
@@ -203,7 +203,7 @@ namespace ST.PVS
             if (!s_CanPVSExport || !s_HasPVSScript)
                 return;
 
-            PVSWrapBridge.onResToolsEnableSet(true);
+            PVSWrapBridge.onResToolsEnableSet?.Invoke(true);
             EditorUtility.DisplayProgressBar("PVS验证", "PVS验证", 1f);
             PVSBakeDataValidation.S.Validation();
             EditorUtility.ClearProgressBar();
