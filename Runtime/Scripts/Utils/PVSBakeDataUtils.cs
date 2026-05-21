@@ -271,9 +271,9 @@ namespace ST.PVS
             string occlusionName = "occlusion";
 
             string strPath = PVSBakeDataUtils.GetActiveScenePath();
-            string dir = string.Format("{0}{1}", strPath, occlusionName);
+            string dir = string.Format("{0}/{1}", strPath, occlusionName);
             string path = "";
-            string newPath = strPath.Remove(strPath.Length - 1);
+            string newPath = strPath;
 
             if (isCreateFolder)
             {
@@ -430,31 +430,9 @@ namespace ST.PVS
         {
 #if UNITY_EDITOR
             var curScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
-            string fileName = Path.GetFileNameWithoutExtension(curScene.path);
-            string srcFile = Path.GetFullPath(curScene.path);
-            srcFile = srcFile.Replace("-stream", "");
-            string srcPath = srcFile.Replace(".unity", "");
-
-            string[] strs = srcPath.Split('\\');
-            if (strs[strs.Length - 1] != strs[strs.Length - 2])
-            {
-                strs[strs.Length - 1] = strs[strs.Length - 2];
-            }
-            string newPath = "";
-            bool bCut = false;
-            for (int i = 0; i < strs.Length; i++)
-            {
-                if (strs[i] == "Assets")
-                {
-                    bCut = true;
-                }
-                if (bCut)
-                {
-                    newPath += strs[i];
-                    newPath += "/";
-                }
-            }
-            return newPath;
+            // Return the directory that contains the scene file, e.g. "Assets/Scenes"
+            string dirPath = Path.GetDirectoryName(curScene.path);
+            return dirPath.Replace('\\', '/');
 #else
             return "";
 #endif
