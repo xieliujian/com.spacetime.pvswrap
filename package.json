@@ -1,6 +1,6 @@
 {
   "name": "com.spacetime.pvswrap",
-  "displayName": "ST PVS Wrap",
+  "displayName": "SpaceTime PVS Wrap",
   "version": "1.0.0",
   "unity": "2022.3",
   "description": "SpaceTime PVS Wrap package - higher-level PVS wrapper with volume management, camera sampling, octree, and scene utilities",
