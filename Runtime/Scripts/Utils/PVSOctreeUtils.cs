@@ -60,6 +60,9 @@ namespace ST.PVS
         /// <returns></returns>
         public static bool IsMaxDensityAreaExist_Game(PVSVolume cullingVolume)
         {
+            if (cullingVolume == null || cullingVolume.volumeBakeData == null)
+                return false;
+
             var isAreaExist = cullingVolume.volumeBakeData.octreeAreaExist;
             return isAreaExist;
         }
