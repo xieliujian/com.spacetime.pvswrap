@@ -207,6 +207,9 @@ namespace ST.PVS
             EditorUtility.DisplayProgressBar("PVS验证", "PVS验证", 1f);
             PVSBakeDataValidation.S.Validation();
             EditorUtility.ClearProgressBar();
+
+            // 刷新 AssetDatabase，使新生成的 occlusion_*.bytes 文件在 Unity 编辑器中可见
+            AssetDatabase.Refresh();
         }
     }
 }
