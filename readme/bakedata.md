@@ -320,4 +320,129 @@ GetIndicesByRawData(offset, indices):
 
 ---
 
+## 8. 优势与劣势分析
+
+### 8.1 优势
+
+#### 空间分块（Chunk）支持流式加载
+
+每个 Chunk 独立存储为一个 `.bytes` 文件，运行时可按相机位置按需加载，无需将整个场景可见性数据全部驻留内存。对于大型开放世界场景，未进入的区域的 Chunk 完全不占用内存。`PVSCellInfo.bounds` 提供了空间判断的依据，加载决策无需解析数据内容。
+
+#### Group 共享数据利用空间局部性
+
+空间相邻的采样点往往共享大量相同的可见渲染器（例如同一楼层的多个采样点都能看到同一批建筑）。将交集提取为 `shareRawData`，每个采样点只存差量，在采样点密集且场景结构化的情况下压缩率显著。差量越小，文件体积越小，IO 越快。
+
+#### 高低字节编码（VisibilitySet2）稀疏存储
+
+渲染器索引通常连续分配，高字节（`height = index >> 8`）相同的索引可以共用一行头。只存有数据的行（稀疏），跳过空行，对于可见渲染器数量少的采样点尤其节省空间。相比直接存 `ushort[]`，在索引聚集时有明显优势。
+
+#### 两级索引结构，查询路径短
+
+主索引（`rawDataIdxArray`）极小，每个采样点仅占 3～5 字节，整个场景索引可常驻内存。运行时查询只需一次主索引读取定位到 `(chunkIdx, rawIdx)`，再一次 Chunk 内偏移表读取定位到数据块，路径层数固定，无递归。
+
+#### saveBigVisIndex 自动扩容
+
+采样点数量超过 65535 时自动将 rawIdx 从 `ushort`（2 字节）切换为 `uint`（4 字节），无需修改其他代码，兼容中小型和超大型场景。
+
+#### NativeArray 模式减少运行时 GC
+
+`PVSBakeDataSerialize` 支持 `useNative=true`，通过 `UnsafeUtility.ReadArrayElement` 直接指针读取，绕过托管数组的边界检查，高频帧查询时更友好，且 NativeArray 不触发 GC。
+
+#### PreferBinarySerialization 降低 ScriptableObject 体积
+
+`PVSVolumeBakeData` 标注 `[PreferBinarySerialization]`，Unity 以二进制格式而非 YAML 文本序列化，`rawDataIdxArray`（byte[]）、`cellInfoList` 等字段磁盘体积显著小于文本格式。
+
+---
+
+### 8.2 劣势
+
+#### 反序列化路径层级深，调试困难
+
+运行时一次查询的调用链：
+
+```
+SampleAtIndex
+  → SampleAtIndexByVer6
+    → DeserializeRead（主索引）→ (chunkIdx, rawIdx)
+      → SampleAtIndexByVer5
+        → exBinData[chunkIdx].DeserializeRead_ByVer4(rawIdx)
+          → GetIndicesByRawData(rawDataOffset)   // rawData
+          → GetIndicesByRawData(shareDataOffset) // shareData
+```
+
+五层调用，任何一层的偏移计算错误都会导致静默读错数据（返回错误的可见集而非崩溃）。数据损坏极难定位，必须逐层打印偏移才能排查。
+
+#### 每次查询都重复读取 shareRawData，无缓存
+
+同一 Group 内所有采样点共享同一份 `shareRawData`，但 `DeserializeRead_ByVer4` 每次都从字节流中重新解码 `shareRawData` 并追加到 `indices`，没有任何缓存机制。在同一帧内多个相机或多次查询命中同一 Group 时，`shareRawData` 被重复解码。
+
+#### FindCommonNumbers 在 Group 内采样点多样时效率低
+
+```csharp
+// 以第一个点的可见集初始化，逐一与后续点求交集
+HashSet<ushort> commonNumbers = new HashSet<ushort>(srcRawData[0]);
+for (int i = 1; i < rawDataList.Count; i++)
+    commonNumbers.IntersectWith(srcRawData[i]);
+```
+
+若 Group 内采样点的可见集差异较大（如高处点与低处点可见集几乎不重叠），交集为空，共享数据为零，但仍完整执行了所有 `IntersectWith`。空交集意味着本次分组压缩完全无效，所有采样点仍需存储全量数据。
+
+#### FindRawData 是线性扫描（烘焙期）
+
+```csharp
+for (int i = 0; i < rawDataList.Count; i++) {
+    if (rawDataList[i].sampleIdx == _sampleIdx) ...
+}
+```
+
+烘焙阶段 `PVSCompressRawDataChunkMgr.GetRawData` 用此方法查找，复杂度 O(N)。大场景 Chunk 内采样点数量大时烘焙耗时上涨，可改为 `Dictionary<int, PVSCompressRawData>` 以 O(1) 替代。
+
+#### chunkIdx 在主索引中以 byte 存储，容量上限为 255
+
+```csharp
+// chunkIdx 项目有效值不会超过 64，用 byte 存储不会溢出
+byte chunkIdxByte = (byte)chunkIdx;
+```
+
+这是一个硬编码假设（`mapSize / chunkSize ≤ 255`）。若项目地图尺寸增大或 chunkSize 缩小，超过 255 个 Chunk 时会发生截断错误，且不会有任何运行时警告。
+
+#### PVSCompressRawDataChunkMgr 是全局单例，不可并发
+
+```csharp
+static PVSCompressRawDataChunkMgr s_Instance;
+```
+
+同一进程内只能有一个烘焙任务在运行，无法对多个 Volume 并行烘焙。若烘焙中断，单例状态残留，下次烘焙必须重新 `Init` 才能清理旧数据，否则可能产生脏数据混入。
+
+#### VisibilitySet2 头部开销对稀少可见集不划算
+
+每个 `VisibilitySet2` 固定写入：
+
+```
+rowCount(4字节) + rowCount × rowOffset(4字节/行) + 每行 height(1) + lowCount(4) + lowData
+```
+
+若某采样点只有 1～2 个可见渲染器，头部元数据（至少 13 字节）远超有效数据（2～4 字节），不如直接存原始 `ushort[]`。
+
+#### 版本共存，无自动迁移
+
+代码中存在 Ver3 / Ver4 / Ver5 / Ver6 多个读取路径，`bakeDataVersion` 字段记录版本号但不驱动自动迁移。旧格式数据必须重新烘焙才能升级，没有工具支持跨版本数据升级，给长期维护带来负担。
+
+---
+
+### 8.3 优劣总结
+
+| 维度 | 评价 |
+|------|------|
+| **运行时内存** | ✅ 流式加载，按需占用 |
+| **文件体积** | ✅ 多层压缩，通常较小 |
+| **查询性能** | ⚠️ 固定层数，但 shareData 无缓存 |
+| **烘焙性能** | ⚠️ 大场景 FindRawData 线性扫描，可优化 |
+| **可扩展性** | ⚠️ chunkIdx byte 上限 255，大地图存在风险 |
+| **并发安全** | ❌ 单例 ChunkMgr，不支持并发烘焙 |
+| **调试友好性** | ❌ 多层偏移间接，数据错误难以定位 |
+| **版本演进** | ❌ 多版本共存，无自动迁移 |
+
+---
+
 [← 返回索引](DETAILS.md) | [← 返回 README](../README.md)
