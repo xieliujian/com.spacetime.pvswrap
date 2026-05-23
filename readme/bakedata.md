@@ -445,4 +445,219 @@ rowCount(4字节) + rowCount × rowOffset(4字节/行) + 每行 height(1) + lowC
 
 ---
 
+## 9. 优化建议
+
+### 9.1 缓存 shareRawData 解码结果（查询热路径）
+
+**问题**：每次 `DeserializeRead_ByVer4` 都对 shareRawData 重新解码，同一 Group 在同一帧被多次命中时做无意义重复工作。
+
+**建议**：在 `PVSBakeDataSerialize` 中维护一个按 shareRawDataOffset 为键的 `Dictionary<int, ushort[]>` 缓存，首次解码后存入，后续命中直接返回：
+
+```csharp
+// PVSBakeDataSerialize 内
+Dictionary<int, ushort[]> _shareCache = new Dictionary<int, ushort[]>();
+
+void GetIndicesByRawData_Cached(int offset, RapidList<ushort> indices)
+{
+    if (!_shareCache.TryGetValue(offset, out ushort[] cached))
+    {
+        var temp = new RapidList<ushort>();
+        GetIndicesByRawData(offset, temp);
+        cached = temp.ToArray();
+        _shareCache[offset] = cached;
+    }
+    foreach (var idx in cached)
+        indices.Add(idx);
+}
+```
+
+每帧结束或 Chunk 卸载时清空缓存。该优化对相机静止或缓慢移动的场景效果最明显。
+
+---
+
+### 9.2 将 FindRawData 线性扫描改为字典（烘焙性能）
+
+**问题**：`PVSCompressRawDataChunk.FindRawData` 遍历 `rawDataList` 线性查找，O(N)。
+
+**建议**：在 Chunk 内增加一个 `Dictionary<int, PVSCompressRawData>`，以 `sampleIdx` 为键：
+
+```csharp
+// PVSCompressRawDataChunk 内
+Dictionary<int, PVSCompressRawData> _rawDataDict = new Dictionary<int, PVSCompressRawData>();
+
+public void AddGroup(int _sampleIdx, ...)
+{
+    var rawData = rawGroup.Fill(...);
+    rawDataList.Add(rawData);
+    _rawDataDict[_sampleIdx] = rawData;   // 同步维护
+    ...
+}
+
+public PVSCompressRawData FindRawData(int _sampleIdx, out int _rawDataIdx)
+{
+    if (_rawDataDict.TryGetValue(_sampleIdx, out var rawData))
+    {
+        _rawDataIdx = rawData.saveIdx;
+        return rawData;
+    }
+    _rawDataIdx = int.MaxValue;
+    return null;
+}
+```
+
+大场景每个 Chunk 含数千个采样点时，烘焙阶段的 `GetRawData` 调用从 O(N) 降到 O(1)。
+
+---
+
+### 9.3 将 exBinData 字典改为数组（运行时查询）
+
+**问题**：`exBinData` 是 `Dictionary<int, PVSBakeDataSerialize>`，每次 `SampleAtIndex` 都做一次哈希查找。
+
+**建议**：chunkIdx 的有效范围已知（`mapSize / chunkSize` 最大 255），可直接用数组替代字典：
+
+```csharp
+// PVSVolumeBakeData 内
+[NonSerialized]
+PVSBakeDataSerialize[] _binDataArray; // 长度 = maxChunkCount
+
+void InitBinDataArray()
+{
+    int maxChunk = (PVSDefine.s_MapSize / PVSDefine.s_ChunkSize);
+    _binDataArray = new PVSBakeDataSerialize[maxChunk * maxChunk];
+}
+
+public override void FillStreamData(int nIdx, byte[] datas, int pvsSize, bool useNative)
+{
+    _binDataArray[nIdx] = new PVSBakeDataSerialize(datas, useNative, pvsSize);
+    // 保留 exBinData 用于兼容
+}
+```
+
+数组下标访问 O(1) 且缓存更友好，避免哈希碰撞和字典对象开销。
+
+---
+
+### 9.4 扩展 chunkIdx 存储宽度，消除 255 上限
+
+**问题**：主索引中 chunkIdx 以 `byte` 存储，硬上限 255 个 Chunk，大地图有溢出风险。
+
+**建议**：参照 `saveBigVisIndex` 的做法，增加 `saveBigChunkIndex` 标志位，按需将 chunkIdx 从 1 字节扩展到 2 字节（`ushort`，支持 65535 个 Chunk）：
+
+```
+// 主索引 entry 格式（saveBigChunkIndex=true 时）
+[chunkIdx: ushort]   // 2 字节，替代原 1 字节
+[rawIdx: ushort / uint]
+```
+
+同时在 `SerializeWrite` / `DeserializeRead` 中增加对应分支，并在烘焙前检测实际 Chunk 数量自动选择宽度。
+
+---
+
+### 9.5 烘焙时检测无效 Group，跳过空交集分组
+
+**问题**：`FindCommonNumbers` 在 Group 内采样点可见集差异大时交集为空，共享压缩完全无效，但仍完整执行了所有 `IntersectWith`。
+
+**建议**：快速估算后跳过：
+
+```csharp
+public void Calc()
+{
+    // 采样点数为 1 时无需求交集，直接跳过 share 计算
+    if (rawDataList.Count <= 1)
+    {
+        CompressModifyRawData_NoShare();
+        return;
+    }
+
+    var shareDataList = PVSCompressRawDataUtils.FindCommonNumbers(rawDataList);
+
+    // 交集为空或占比过低时，不使用共享数据
+    if (shareDataList.Count < 4)
+    {
+        CompressModifyRawData_NoShare();
+        return;
+    }
+
+    CalcModifyRawData(shareDataList);
+    CompressModifyRawData();
+}
+```
+
+阈值（如 `< 4`）可根据实际场景调整。避免在交集极小时引入共享数据头部开销反而增大体积。
+
+---
+
+### 9.6 对稀少可见集采样点使用原始 ushort[] 直接存储
+
+**问题**：`VisibilitySet2` 对可见渲染器数量 ≤ 3 的采样点，头部元数据（rowCount + rowOffset + height + lowCount）开销远大于有效数据本身。
+
+**建议**：在 `CompressRawData` 入口加一个阈值判断，少于 N 个索引时直接写 `ushort[]`，标记一个 flag byte 区分两种格式：
+
+```csharp
+// VisibilitySetRow[] 序列化时
+if (indices.Length <= 4)
+{
+    // flag=0: 原始格式
+    saveBytes.Add(0);
+    saveBytes.Add((byte)indices.Length);
+    foreach (var idx in indices) saveBytes.AddItems(BitConverter.GetBytes(idx));
+}
+else
+{
+    // flag=1: VisibilitySet2 压缩格式
+    saveBytes.Add(1);
+    compressData.SerializeWrite(saveBytes);
+}
+```
+
+对大量"几乎不可见"的远端格子效果显著。
+
+---
+
+### 9.7 引入版本路由，废弃旧版读取路径
+
+**问题**：Ver3/4/5/6 多版本读取路径共存，长期维护成本高，新开发者难以理解哪条路径是当前主路径。
+
+**建议**：
+1. 将 `bakeDataVersion` 作为强制校验字段，加载时若版本不匹配直接报错提示重新烘焙，而不是静默走旧版路径。
+2. 在 Editor 工具中提供 **"检测过期数据"** 菜单项，扫描场景中所有 `PVSVolumeBakeData`，标记版本落后的资产。
+3. 确定最终版本后，将旧版读取代码移入 `#if PVS_LEGACY_SUPPORT` 编译开关，正式包中默认关闭。
+
+---
+
+### 9.8 ChunkMgr 去单例化，支持多 Volume 并发烘焙
+
+**问题**：`PVSCompressRawDataChunkMgr.S` 全局单例，无法同时处理多个 Volume。
+
+**建议**：将 `ChunkMgr` 改为实例化对象，由 `PVSVolumeBakeData.CompleteBake` 在栈上创建并传递：
+
+```csharp
+public override void CompleteBake()
+{
+    var chunkMgr = new PVSCompressRawDataChunkMgr(); // 不再用单例
+    chunkMgr.Init(rawData, allSamplePosInfoList, volumeSize);
+    ...
+    PVSCompressRawDataUtils.SaveBinData(chunkMgr, ...);
+}
+```
+
+每个 Volume 的烘焙独立持有自己的 `ChunkMgr` 实例，天然线程隔离，支持未来并行烘焙。
+
+---
+
+### 9.9 优化建议优先级总结
+
+| 优先级 | 建议 | 收益 | 改动量 |
+|--------|------|------|--------|
+| ⭐⭐⭐ | 9.2 FindRawData 改字典 | 烘焙提速（大场景明显） | 小 |
+| ⭐⭐⭐ | 9.1 shareRawData 缓存 | 运行时高频查询减少重复解码 | 中 |
+| ⭐⭐⭐ | 9.5 跳过空交集分组 | 减少无效烘焙计算和体积膨胀 | 小 |
+| ⭐⭐ | 9.3 exBinData 改数组 | 运行时查询缓存更友好 | 小 |
+| ⭐⭐ | 9.4 chunkIdx 扩展宽度 | 消除大地图溢出风险 | 中 |
+| ⭐⭐ | 9.6 稀少可见集直接存储 | 减少小数据集头部开销 | 中 |
+| ⭐ | 9.7 版本路由清理 | 降低维护成本 | 大 |
+| ⭐ | 9.8 ChunkMgr 去单例 | 支持并发烘焙 | 大 |
+
+---
+
 [← 返回索引](DETAILS.md) | [← 返回 README](../README.md)
