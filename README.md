@@ -13,6 +13,14 @@ SpaceTime PVS 上层封装包，负责**数据收集、数据存储与烘培调�
 
 ---
 
+## 疑难杂症
+
+| 文档 | 内容 |
+|------|------|
+| [troubleshooting.md](readme/troubleshooting.md) | PVSBakerUnity SamplePosition：CPU 与 GPU 像素读取方案对比分析 |
+
+---
+
 ## 参考
 
 本包整体架构参考自以下 Unity 插件：
