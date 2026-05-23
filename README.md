@@ -18,6 +18,7 @@ SpaceTime PVS 上层封装包，负责**数据收集、数据存储与烘培调�
 | 文档 | 内容 |
 |------|------|
 | [troubleshooting.md](readme/troubleshooting.md) | PVSBakerUnity SamplePosition：CPU 与 GPU 像素读取方案对比分析 |
+| [bakedata.md](readme/bakedata.md) | 数据存储系统：结构、压缩算法、二进制格式、运行时读取流程 |
 
 ---
 
