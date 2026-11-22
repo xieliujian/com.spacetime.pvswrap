@@ -1,4 +1,4 @@
-
+﻿
 #if UNITY_EDITOR
 using System;
 using System.Collections;
@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -28,7 +28,7 @@ namespace ST.PVS
 
         private static void BakeSingle()
         {
-            Logger.Log("Single scene bake.");
+            STLogger.Log("Single scene bake.");
             
             PVSBakingBehaviour[] bakingBehaviours = GameObject.FindObjectsOfType<PVSBakingBehaviour>();
 
@@ -37,7 +37,7 @@ namespace ST.PVS
 
         private static void BakeMulti()
         {
-            Logger.Log("Multi scene bake.");
+            STLogger.Log("Multi scene bake.");
             
             List<UnityEngine.SceneManagement.Scene> scenesToBake = new List<UnityEngine.SceneManagement.Scene>();
             

@@ -52,7 +52,7 @@ m_PVSManager.Query();
 
 ### Logging
 
-统一使用 `Logger` 静态类，禁止直接调用 `UnityEngine.Debug`。
+统一使用 `STLogger` 静态类，禁止直接调用 `UnityEngine.Debug`。
 
 ### Section Dividers
 

@@ -1,7 +1,7 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 #if LR_SCENE_MERGE_ENABLED
 using LR.Scene.SceneMerge;
@@ -25,7 +25,7 @@ namespace ST.PVS
             var exportCfg = SceneMergeUtils.FindExportConfig();
             if (exportCfg == null)
             {
-                Logger.LogError("[PVS] PVSSceneMergeUtils.FillBakeGroupSet exportCfg == null");
+                STLogger.LogError("[PVS] PVSSceneMergeUtils.FillBakeGroupSet exportCfg == null");
                 return;
             }
 

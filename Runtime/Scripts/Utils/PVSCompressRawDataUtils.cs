@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -103,7 +103,7 @@ namespace ST.PVS
             var rawGroupUnitRange = GridMath.CalculateCellCount(volumeSize, maxCellNum);
             rawGroupUnitRange *= unitRange;
 
-            Logger.Log($"[PVS][CalcCompressRawDataGroupUnitRange]: {rawGroupUnitRange}");
+            STLogger.Log($"[PVS][CalcCompressRawDataGroupUnitRange]: {rawGroupUnitRange}");
 
             return rawGroupUnitRange;
         }
@@ -259,7 +259,7 @@ namespace ST.PVS
 
             if (_chunk.rawDataList.Count != idxSize)
             {
-                Logger.LogError($"[PVS][SerializeWriteChunk_OffsetInfo]: chunk rawDataList count not equal idxSize, " +
+                STLogger.LogError($"[PVS][SerializeWriteChunk_OffsetInfo]: chunk rawDataList count not equal idxSize, " +
                     $"chunkIdx:{_chunk.chunkIdx}, rawDataList count:{_chunk.rawDataList.Count}, idxSize:{idxSize}");
             }
 

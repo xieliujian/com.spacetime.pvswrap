@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -81,7 +81,7 @@ namespace ST.PVS
                 nSrcSize += _rawData[i].uncompressed.Length * 2;
             }
 
-            Logger.Log("rawdata size " + nSrcSize + " " + "Compressed Size" + nDestSize);
+            STLogger.Log("rawdata size " + nSrcSize + " " + "Compressed Size" + nDestSize);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace ST.PVS
 
                     if (_visibilityIndex[i] >= ushort.MaxValue)
                     {
-                        Logger.LogError($"[PVS][PVSBakeDataUtils] _visibilityIndex[i] >= ushort.MaxValue" +
+                        STLogger.LogError($"[PVS][PVSBakeDataUtils] _visibilityIndex[i] >= ushort.MaxValue" +
                             $"ChunkIdx : {_selectChunkIndex[i]} _visibilityIndex : {_visibilityIndex[i]}");
                     }
                 }

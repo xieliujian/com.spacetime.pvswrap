@@ -1,9 +1,9 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -105,14 +105,14 @@ namespace ST.PVS
             var rawDataArray = _bakeData.rawData;
             if (rawDataArray == null || rawDataArray.Length == 0)
             {
-                Logger.LogError("[PVS][CalcRawDataShareData] rawDataArray is null or empty.");
+                STLogger.LogError("[PVS][CalcRawDataShareData] rawDataArray is null or empty.");
                 return;
             }
 
             var tempRawDataList = PVSCompressRawDataUtils.GetValidRawDataList(rawDataArray);
             rawShareDataSet = PVSCompressRawDataUtils.FindCommonNumbers(tempRawDataList.ToArray());
 
-            Logger.Log($"[PVS][CalcRawDataShareData] rawShareDataSet.Count: " +
+            STLogger.Log($"[PVS][CalcRawDataShareData] rawShareDataSet.Count: " +
                 $"{rawShareDataSet.Count} / rawDataArray.Length: {tempRawDataList.Count}");
         }
 
@@ -135,7 +135,7 @@ namespace ST.PVS
                 }
             }
 
-            Logger.Log($"[PVS][CalcForceSampleIdxNum] forceSampleIndexNum : {forceSampleIndexNum} / " +
+            STLogger.Log($"[PVS][CalcForceSampleIdxNum] forceSampleIndexNum : {forceSampleIndexNum} / " +
                 $"{samplePosList.Count}");
         }
 
@@ -149,7 +149,7 @@ namespace ST.PVS
             var rawDataArray = _bakeData.rawData;
             if (rawDataArray == null || rawDataArray.Length == 0)
             {
-                Logger.LogError("[PVS][CalcActiveSampleIDList] rawDataArray is null or empty.");
+                STLogger.LogError("[PVS][CalcActiveSampleIDList] rawDataArray is null or empty.");
                 return;
             }
 
@@ -163,7 +163,7 @@ namespace ST.PVS
                 activeSampleIDList.Add(i);
             }
 
-            Logger.Log($"[PVS][CalcActiveSampleIDList] activeSampleIDList.Count: " +
+            STLogger.Log($"[PVS][CalcActiveSampleIDList] activeSampleIDList.Count: " +
                 $"{activeSampleIDList.Count}");
         }
 
@@ -276,12 +276,12 @@ namespace ST.PVS
             var rawDataArray = _bakeData.rawData;
             if (rawDataArray == null || samplePosList.Count != rawDataArray.Length)
             {
-                Logger.LogError("[PVS][CalcInvalidSamplePosList] samplePosList.Count != rawDataArray.Length");
+                STLogger.LogError("[PVS][CalcInvalidSamplePosList] samplePosList.Count != rawDataArray.Length");
                 return;
             }
 
             totalSamplePosList.AddRange(samplePosList);
-            Logger.Log($"[PVS][CalcInvalidSamplePosList] samplePosList.Count: " +
+            STLogger.Log($"[PVS][CalcInvalidSamplePosList] samplePosList.Count: " +
                 $"{totalSamplePosList.Count}");
 
             for (int i = 0; i < samplePosList.Count; i++)
@@ -312,7 +312,7 @@ namespace ST.PVS
 
             if (invalidSamplePosList.Count > 0)
             {
-                Logger.LogError($"[PVS][CalcInvalidSamplePosList] Invalid sample pos Num: " +
+                STLogger.LogError($"[PVS][CalcInvalidSamplePosList] Invalid sample pos Num: " +
                     $"{invalidSamplePosList.Count} / Sample pos Num : {totalSamplePosList.Count}");
             }
         }
@@ -400,7 +400,7 @@ namespace ST.PVS
             CalcCompressRawDataSize(_bakeData);
 
             float precent = compressRawDataSize / (float)unCompressRawDataSize;
-            Logger.Log($"[PVS][CalcRawDataSize] " +
+            STLogger.Log($"[PVS][CalcRawDataSize] " +
                 $"unCompressRawDataSize: {unCompressRawDataSize}, compressRawDataSize: {compressRawDataSize} " +
                 $"CompressPercent {precent}" );
         }

@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -302,7 +302,7 @@ namespace ST.PVS
         {
             if (_leafNodeIdx >= PVSDefine.s_OctreeMaxLeafNum)
             {
-                Logger.LogError($"[PVS][PVSOctreeUtils] _leafNodeIdx Error, this should not happen. leafNodeIdx: {_leafNodeIdx}");
+                STLogger.LogError($"[PVS][PVSOctreeUtils] _leafNodeIdx Error, this should not happen. leafNodeIdx: {_leafNodeIdx}");
                 return;
             }
 
@@ -364,7 +364,7 @@ namespace ST.PVS
 
             if (_leafNodeIdx >= PVSDefine.s_OctreeMaxLeafNum)
             {
-                Logger.LogError($"[PVS][PVSOctreeUtils] _leafNodeIdx Error, this should not happen. leafNodeIdx: {_leafNodeIdx}");
+                STLogger.LogError($"[PVS][PVSOctreeUtils] _leafNodeIdx Error, this should not happen. leafNodeIdx: {_leafNodeIdx}");
                 return;
             }
 
@@ -496,7 +496,7 @@ namespace ST.PVS
                     }
                 }
 
-                Logger.Log(string.Format(format, _worldPos, offsetPosDesc, _cellSize, desc));
+                STLogger.Log(string.Format(format, _worldPos, offsetPosDesc, _cellSize, desc));
             }
 #endif
         }

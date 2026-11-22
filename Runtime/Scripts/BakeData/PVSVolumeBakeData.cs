@@ -1,10 +1,10 @@
-
+﻿
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -149,7 +149,7 @@ namespace ST.PVS
         {
 	        if (validateData && indices.Length <= 0)
 	        {
-				Logger.LogWarning("[PVS] Cell without any visible renderers. Should be highly unlikely to happen unless you are performing a multi-scene bake with additional occluders.");
+				STLogger.LogWarning("[PVS] Cell without any visible renderers. Should be highly unlikely to happen unless you are performing a multi-scene bake with additional occluders.");
 	        }
 
 	        rawData[index] = new RawData()

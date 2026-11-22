@@ -1,4 +1,4 @@
-
+﻿
 
 using System;
 using System.Collections;
@@ -13,7 +13,7 @@ using ST.Core;
 #if LR_SCENE_MERGE_ENABLED
 using LR.Scene.SceneMerge;
 #endif
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -447,7 +447,7 @@ namespace ST.PVS
             var worldInfoList = FindWorldPosInfoList();
             if (_samplingLocations.Count != worldInfoList.Count)
             {
-                Logger.LogError("CalcSamplePosOffsetMask Error: _samplingLocations.Count != worldInfoList.Count");
+                STLogger.LogError("CalcSamplePosOffsetMask Error: _samplingLocations.Count != worldInfoList.Count");
                 return;
             }
 

@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -465,7 +465,7 @@ namespace ST.PVS
             var ignorePVSTag = PVSDefine.s_Baker_IgnorePVS_Tag;
             if (selectedGameObject.tag == ignorePVSTag)
             {
-                Logger.Log(ignorePVSTag + " " + selectedGameObject.name);
+                STLogger.Log(ignorePVSTag + " " + selectedGameObject.name);
                 return false;
             }
 

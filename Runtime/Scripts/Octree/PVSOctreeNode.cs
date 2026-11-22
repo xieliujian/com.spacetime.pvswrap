@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -149,7 +149,7 @@ namespace ST.PVS
             {
                 if (m_ChildList.Count > 0)
                 {
-                    Logger.LogError("[PVS][PVSSceneOctree] m_ChildList.Count >= 0");
+                    STLogger.LogError("[PVS][PVSSceneOctree] m_ChildList.Count >= 0");
                 }
 
                 SetForceAreaData();
@@ -330,7 +330,7 @@ namespace ST.PVS
             {
                 if (child == null)
                 {
-                    Logger.LogError("[PVS][PVSSceneOctree] child is null");
+                    STLogger.LogError("[PVS][PVSSceneOctree] child is null");
                     continue;
                 }
 
@@ -377,12 +377,12 @@ namespace ST.PVS
             {
                 if (rawDataList.Count != 2)
                 {
-                    Logger.LogError("[PVS][PVSOctreeNode] SerializeWrite_RawData rawDataList.Count != 2");
+                    STLogger.LogError("[PVS][PVSOctreeNode] SerializeWrite_RawData rawDataList.Count != 2");
                 }
 
                 if (m_ChildList.Count > 0)
                 {
-                    Logger.LogError("[PVS][PVSOctreeNode] SerializeWrite_RawData m_ChildList.Count > 0");
+                    STLogger.LogError("[PVS][PVSOctreeNode] SerializeWrite_RawData m_ChildList.Count > 0");
                 }
 
                 // chunkIdx 项目有效值不会超过 64，用byte存储不会溢出 
@@ -592,7 +592,7 @@ namespace ST.PVS
             {
                 if (m_Volume == null)
                 {
-                    Logger.LogError($"[PVS][PVSOctreeNode] m_Volume == null");
+                    STLogger.LogError($"[PVS][PVSOctreeNode] m_Volume == null");
                     return;
                 }
 

@@ -1,8 +1,8 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -49,11 +49,11 @@ namespace ST.PVS
             {
                 if (_script.IsPointInGizmos(_script.debugPos))
                 {
-                    Logger.LogError($"{_script.debugPos} 在区域内");
+                    STLogger.LogError($"{_script.debugPos} 在区域内");
                 }
                 else
                 {
-                    Logger.LogError($"{_script.debugPos} 不在区域内");
+                    STLogger.LogError($"{_script.debugPos} 不在区域内");
                 }
             }
         }

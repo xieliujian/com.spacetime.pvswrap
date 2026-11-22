@@ -1,10 +1,10 @@
-
+﻿
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 
 namespace ST.PVS
@@ -178,7 +178,7 @@ namespace ST.PVS
         {
             if (m_NodeList.Count != nodeIdxArray.Length)
             {
-                Logger.LogError("[PVS][PVSSceneOctree] m_NodeList.Count != nodeIdxArray.Length");
+                STLogger.LogError("[PVS][PVSSceneOctree] m_NodeList.Count != nodeIdxArray.Length");
                 return;
             }
 
@@ -198,7 +198,7 @@ namespace ST.PVS
 
                 if (dataIdx >= ushort.MaxValue)
                 {
-                    Logger.LogError($"[PVS][PVSSceneOctree] dataIdx >= ushort.MaxValue" +
+                    STLogger.LogError($"[PVS][PVSSceneOctree] dataIdx >= ushort.MaxValue" +
                             $"ChunkIdx : {chunkIdx}  dataIdx : {dataIdx}");
                 }
 
@@ -206,7 +206,7 @@ namespace ST.PVS
                 hasDataNodeNum++;
             }
 
-            Logger.Log($"[PVS][PVSSceneOctree] hasDataNodeNum : {hasDataNodeNum}");
+            STLogger.Log($"[PVS][PVSSceneOctree] hasDataNodeNum : {hasDataNodeNum}");
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace ST.PVS
             {
                 if (child == null)
                 {
-                    Logger.LogError("[PVS][PVSSceneOctree] child is null");
+                    STLogger.LogError("[PVS][PVSSceneOctree] child is null");
                     continue;
                 }
 
@@ -279,7 +279,7 @@ namespace ST.PVS
 
             if (m_NodePosInfoList.Count != m_NodeList.Count)
             {
-                Logger.LogError($"[PVS][PVSSceneOctree] m_NodePosList.Count != m_NodeList.Count");
+                STLogger.LogError($"[PVS][PVSSceneOctree] m_NodePosList.Count != m_NodeList.Count");
             }
         }
 
@@ -299,7 +299,7 @@ namespace ST.PVS
                 if (m_NodeDict.ContainsKey(nodeID))
                 {
                     var nodeDesc = node.GetDesc();
-                    Logger.LogError($"[PVS][PVSSceneOctree] {nodeDesc}");
+                    STLogger.LogError($"[PVS][PVSSceneOctree] {nodeDesc}");
                     continue;
                 }
 

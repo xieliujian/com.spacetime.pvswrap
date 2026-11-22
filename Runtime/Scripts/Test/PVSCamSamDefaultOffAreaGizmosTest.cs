@@ -1,7 +1,7 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -30,7 +30,7 @@ namespace ST.PVS
 
             var pos = selGo.transform.position;
             var isInRange = PVSCamSamDefaultOffAreaGizmosMgr.S.IsPointInGizmos(pos);
-            Logger.Log($"[PVSCamSamDefaultOffAreaGizmosTest] isInRange : {isInRange}");
+            STLogger.Log($"[PVSCamSamDefaultOffAreaGizmosTest] isInRange : {isInRange}");
         }
     }
 }

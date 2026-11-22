@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 
 namespace ST.PVS
@@ -52,7 +52,7 @@ namespace ST.PVS
 
             if (visibilityIndex2.Length != selectChunkIndex2.Length)
             {
-                Logger.LogError("[PVS][PVSBakeDataUtils][SerializeWrite] visibilityIndex2.Length != selectChunkIndex2.Length");
+                STLogger.LogError("[PVS][PVSBakeDataUtils][SerializeWrite] visibilityIndex2.Length != selectChunkIndex2.Length");
                 return null;
             }
 
@@ -416,7 +416,7 @@ namespace ST.PVS
 
             if (_isPrint)
             {
-                Logger.Log($"[PVS][CalcUnCompressRawDataSize] unCompressRawDataSize: {unCompressRawDataSize}");
+                STLogger.Log($"[PVS][CalcUnCompressRawDataSize] unCompressRawDataSize: {unCompressRawDataSize}");
             }
 
             return unCompressRawDataSize;
@@ -549,7 +549,7 @@ namespace ST.PVS
             {
                 if (chunkDataArray.Length != idxDataArray.Length)
                 {
-                    Logger.LogError("[PVS][PVSBakeDataUtils][SerializeWrite] chunkDataArray.Length != idxDataArray.Length");
+                    STLogger.LogError("[PVS][PVSBakeDataUtils][SerializeWrite] chunkDataArray.Length != idxDataArray.Length");
                     return _dataBytes.count;
                 }
 

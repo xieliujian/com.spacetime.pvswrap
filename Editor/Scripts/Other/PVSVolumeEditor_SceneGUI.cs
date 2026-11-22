@@ -1,10 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.Rendering;
 using ST.Core;
-using Logger = ST.Core.Logging.Logger;
+using ST.Core.Logging;
 
 namespace ST.PVS
 {
@@ -186,7 +186,7 @@ namespace ST.PVS
                 }
 
                 var desc = PVSCameraUtils.GetSamplePosOffsetMaskDesc(_samplePosOffsetMask);
-                Logger.Log(string.Format("[PVS] UnOctree Gizmos Pos : {0} {1} {2}", worldPos, offsetPos, desc));
+                STLogger.Log(string.Format("[PVS] UnOctree Gizmos Pos : {0} {1} {2}", worldPos, offsetPos, desc));
             }
         }
 
